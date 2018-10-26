@@ -1,5 +1,11 @@
 # mdctx
 
+[![Build Status](https://travis-ci.com/jcchavezs/mdctx.svg?branch=master)](https://travis-ci.com/jcchavezs/mdctx)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jcchavezs/mdctx)](https://goreportcard.com/report/github.com/jcchavezs/mdctx)
+[![GoDoc](https://godoc.org/github.com/jcchavezs/mdctx?status.svg)](https://godoc.org/github.com/jcchavezs/mdctx)
+[![Sourcegraph](https://sourcegraph.com/github.com/jcchavezs/mdctx/-/badge.svg)](https://sourcegraph.com/github.com/jcchavezs/mdctx?badge)
+
+
 Mapped Diagnostic Context for Go logging
 
 ## Usage
