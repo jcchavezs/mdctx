@@ -5,7 +5,7 @@ import (
 )
 
 type key string
-type keyVals []interface{}
+type keyVals map[string]interface{}
 
 var mdcKey key = "mdc"
 
@@ -18,8 +18,11 @@ func (l *mdcLogger) Log(kvs ...interface{}) error {
 	if len(kvs)%2 != 0 {
 		kvs = append(kvs, ErrMissingValue)
 	}
+
 	if ctxKvs := get(l.ctx); len(ctxKvs) != 0 {
-		kvs = append(ctxKvs, kvs...)
+		for key, val := range ctxKvs {
+			kvs = append(kvs, key, val)
+		}
 	}
 	return l.logger.Log(kvs...)
 }
@@ -37,12 +40,24 @@ func Add(ctx context.Context, kvs ...interface{}) context.Context {
 		return ctx
 	}
 
+	currKeyVals := get(ctx)
+
 	if len(kvs)%2 != 0 {
 		kvs = append(kvs, ErrMissingValue)
 	}
 
-	kvs = append(get(ctx), kvs...)
-	return context.WithValue(ctx, mdcKey, keyVals(kvs))
+	if currKeyVals == nil {
+		currKeyVals = keyVals{}
+	}
+
+	for i := 0; i < len(kvs)/2; i++ {
+		idx, ok := kvs[2*i].(string)
+		if ok {
+			currKeyVals[idx] = kvs[2*i+1]
+		}
+	}
+
+	return context.WithValue(ctx, mdcKey, currKeyVals)
 }
 
 // Clear clears all MDC elements into the context

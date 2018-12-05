@@ -14,12 +14,8 @@ func TestAddMDCForEmptyContext(t *testing.T) {
 func TestAddMDCSuccess(t *testing.T) {
 	ctx := Add(context.Background(), "key", "val")
 	kvs := get(ctx)
-	if want, have := "key", kvs[0]; want != have {
+	if want, have := "val", kvs["key"]; want != have {
 		t.Fatalf("unexpected key, want: %q, have: %q", want, have)
-	}
-
-	if want, have := "val", kvs[1]; want != have {
-		t.Fatalf("unexpected value, want: %q, have: %q", want, have)
 	}
 }
 
@@ -28,8 +24,20 @@ type inspectLogger struct {
 }
 
 func (l *inspectLogger) Log(kvs ...interface{}) error {
-	kvs = append(l.kvs, kvs...)
-	l.kvs = keyVals(kvs)
+	if len(kvs)%2 != 0 {
+		kvs = append(kvs, ErrMissingValue)
+	}
+
+	if l.kvs == nil {
+		l.kvs = keyVals{}
+	}
+
+	for i := 0; i < len(kvs)/2; i++ {
+		idx, ok := kvs[2*i].(string)
+		if ok {
+			l.kvs[idx] = kvs[2*i+1]
+		}
+	}
 	return nil
 }
 
@@ -40,7 +48,7 @@ func TestWithSuccessWhenHavingValues(t *testing.T) {
 	wLogger := With(ctx, logger)
 	wLogger.Log("key2", "val2")
 
-	if want, have := 4, len(logger.kvs); want != have {
+	if want, have := 2, len(logger.kvs); want != have {
 		t.Fatalf("unexpected number of key values, want %d, have %d", want, have)
 	}
 }
@@ -52,7 +60,7 @@ func TestWithSuccessWithEmptyContext(t *testing.T) {
 	wLogger := With(ctx, logger)
 	wLogger.Log("key2", "val2")
 
-	if want, have := 2, len(logger.kvs); want != have {
+	if want, have := 1, len(logger.kvs); want != have {
 		t.Fatalf("unexpected number of key values, want %d, have %d", want, have)
 	}
 }
