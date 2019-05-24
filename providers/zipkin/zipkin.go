@@ -10,7 +10,7 @@ import (
 
 // Provider allows users to inject zipkin's traceID value into
 // the log record values.
-var Provider = func(ctx context.Context) context.Context {
+func Provider(ctx context.Context) context.Context {
 	span := zipkin.SpanFromContext(ctx)
 	if span != nil {
 		if traceID := span.Context().ID.String(); traceID != "" {
