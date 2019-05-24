@@ -9,6 +9,10 @@ type keyVals map[string]interface{}
 
 var mdcKey key = "mdc"
 
+type Provider func(context.Context) context.Context
+
+var registeredProviders = []Provider{}
+
 type mdcLogger struct {
 	ctx    context.Context
 	logger Logger
@@ -19,11 +23,17 @@ func (l *mdcLogger) Log(kvs ...interface{}) error {
 		kvs = append(kvs, ErrMissingValue)
 	}
 
-	if ctxKvs := get(l.ctx); len(ctxKvs) != 0 {
+	lCtx := l.ctx
+	for _, h := range registeredProviders {
+		lCtx = h(lCtx)
+	}
+
+	if ctxKvs := get(lCtx); len(ctxKvs) != 0 {
 		for key, val := range ctxKvs {
 			kvs = append(kvs, key, val)
 		}
 	}
+
 	return l.logger.Log(kvs...)
 }
 
@@ -73,4 +83,10 @@ func Clear(ctx context.Context) context.Context {
 // Valuer with their generated value for each call to its Log method.
 func With(ctx context.Context, logger Logger) Logger {
 	return &mdcLogger{ctx: ctx, logger: logger}
+}
+
+// RegisterProvider allows to register new KVProviders at global level
+// to improve the context collection.
+func RegisterProvider(p Provider) {
+	registeredProviders = append(registeredProviders, p)
 }
