@@ -9,9 +9,9 @@ type keyVals map[string]interface{}
 
 var mdcKey key = "mdc"
 
-type KVProvider func(context.Context) []interface{}
+type Provider func(context.Context) context.Context
 
-var kvProviders = []KVProvider{}
+var registeredProviders = []Provider{}
 
 type mdcLogger struct {
 	ctx    context.Context
@@ -23,17 +23,12 @@ func (l *mdcLogger) Log(kvs ...interface{}) error {
 		kvs = append(kvs, ErrMissingValue)
 	}
 
-	for _, h := range kvProviders {
-		newKVS := h(l.ctx)
-		if newKVS != nil {
-			if len(newKVS)%2 != 0 {
-				newKVS = append(newKVS, ErrMissingValue)
-			}
-			kvs = append(kvs, newKVS...)
-		}
+	lCtx := l.ctx
+	for _, h := range registeredProviders {
+		lCtx = h(lCtx)
 	}
 
-	if ctxKvs := get(l.ctx); len(ctxKvs) != 0 {
+	if ctxKvs := get(lCtx); len(ctxKvs) != 0 {
 		for key, val := range ctxKvs {
 			kvs = append(kvs, key, val)
 		}
@@ -90,8 +85,8 @@ func With(ctx context.Context, logger Logger) Logger {
 	return &mdcLogger{ctx: ctx, logger: logger}
 }
 
-// RegisterKVProvider allows to register new KVProviders at global level
+// RegisterProvider allows to register new KVProviders at global level
 // to improve the context collection.
-func RegisterKVProvider(p KVProvider) {
-	kvProviders = append(kvProviders, p)
+func RegisterProvider(p Provider) {
+	registeredProviders = append(registeredProviders, p)
 }

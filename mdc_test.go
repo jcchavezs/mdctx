@@ -73,3 +73,15 @@ func TestClearSuccess(t *testing.T) {
 		t.Fatalf("unexpected number of values, want: %d, have %d", want, have)
 	}
 }
+
+func TestProvidersSuccess(t *testing.T) {
+	RegisterProvider(func(ctx context.Context) context.Context {
+		return Add(ctx, "key_0", "value_0")
+	})
+	ctx := Add(context.Background(), "key_1", "value_1")
+	l := &inspectLogger{}
+	With(ctx, l).Log("key_2", "value_2")
+	if want, have := 3, len(l.kvs); want != have {
+		t.Fatalf("unexpected number of values, want: %d, have %d", want, have)
+	}
+}
