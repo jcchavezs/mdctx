@@ -8,14 +8,28 @@ import (
 	"github.com/openzipkin/zipkin-go"
 )
 
-// Provider allows users to inject zipkin's traceID value into
+// TraceIDProvider allows users to inject zipkin's traceID value into
 // the log record values.
-func Provider(ctx context.Context) context.Context {
+func TraceIDProvider(ctx context.Context) context.Context {
 	span := zipkin.SpanFromContext(ctx)
-	if span != nil {
-		if traceID := span.Context().ID.String(); traceID != "" {
-			return mdctx.Add(ctx, "trace_id", traceID)
-		}
+	if span == nil {
+		return ctx
 	}
-	return ctx
+
+	return mdctx.Add(ctx, "trace_id", span.Context().TraceID.String())
+}
+
+// TraceNSpanIDProvider allows users to inject zipkin's traceID and spanID
+// value into the log record values.
+func TraceNSpanIDProvider(ctx context.Context) context.Context {
+	span := zipkin.SpanFromContext(ctx)
+	if span == nil {
+		return ctx
+	}
+
+	return mdctx.Add(
+		ctx,
+		"trace_id", span.Context().TraceID.String(),
+		"span_id", span.Context().ID.String(),
+	)
 }
